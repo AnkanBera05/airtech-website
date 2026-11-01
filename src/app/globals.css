@@ -1,0 +1,67 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #ffffff;
+  --foreground: #0B192C;
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Technical Blueprint Grid Pattern for Engineering Accent Sections */
+.bg-blueprint-grid {
+  background-size: 32px 32px;
+  background-image: 
+    linear-gradient(to right, rgba(14, 116, 144, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(14, 116, 144, 0.05) 1px, transparent 1px);
+}
+
+.bg-blueprint-dark-grid {
+  background-size: 36px 36px;
+  background-image: 
+    linear-gradient(to right, rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+}
+
+/* Precise Technical Table Rules */
+.tech-table th {
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #475467;
+  border-bottom: 1px solid #D0D5DD;
+  background-color: #F8F9FA;
+  padding: 10px 16px;
+}
+
+.tech-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid #F2F4F7;
+  font-size: 0.875rem;
+}
+
+/* Custom Scrollbar for Portal Data Panels */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #F8F9FA;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #D0D5DD;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #98A2B3;
+}

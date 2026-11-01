@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "skills": {
+    "autofix": {
+      "source": "coderabbitai/skills",
+      "sourceType": "github",
+      "skillPath": "skills/autofix/SKILL.md",
+      "computedHash": "c0f57fe308d32aeb186a8bddc8cf0dcea04ca87132e2d4b3fcfdc9117db8ca76"
+    },
+    "code-review": {
+      "source": "coderabbitai/skills",
+      "sourceType": "github",
+      "skillPath": "skills/code-review/SKILL.md",
+      "computedHash": "2fce7644a30b021b4eb39ec1a75666056e7878c4751901871f38fbaf5890ffb1"
+    }
+  }
+}
