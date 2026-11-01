@@ -1,85 +1,139 @@
 import React from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
-import { Briefcase, MapPin, Clock, ArrowRight } from "lucide-react";
+import { ArrowRight, MapPin, Briefcase, Clock, CheckCircle2 } from "lucide-react";
 
 export default function CareersPage() {
-  const openings = [
+  const positions = [
     {
-      id: "hvac-sr-01",
-      title: "Senior HVAC Design Engineer",
-      department: "HVAC Engineering",
-      location: "Kolkata HQ",
-      experience: "5–8 Years",
-      type: "Full-Time",
-      description: "Responsible for heat-load calculations (HAP 6.0), chiller plant schematic layouts, air distribution duct sizing, and cleanroom air balance.",
+      id: "mech-des",
+      title: "Mechanical Design Engineer",
+      type: "Full-time",
+      location: "Bengaluru",
+      department: "HVAC & Thermal",
     },
     {
-      id: "phe-fire-02",
-      title: "PHE & Fire Protection Engineer",
-      department: "Fire & Plumbing",
-      location: "Kolkata HQ",
-      experience: "3–6 Years",
-      type: "Full-Time",
-      description: "Hydraulic calculations for sprinkler networks, fire pump head calculations, hydro-pneumatic water supply, and drainage sizing per NBC 2016.",
+      id: "elec-des",
+      title: "Electrical Design Engineer",
+      type: "Full-time",
+      location: "Bengaluru",
+      department: "Power & Distribution",
     },
     {
-      id: "cad-bim-03",
-      title: "MEP Draftsperson / BIM Modeler",
-      department: "Engineering Drafting",
+      id: "proj-coord",
+      title: "Project Coordinator",
+      type: "Full-time",
+      location: "Bengaluru",
+      department: "MEP Project Management",
+    },
+    {
+      id: "sr-hvac",
+      title: "Senior HVAC Consultant",
+      type: "Full-time",
       location: "Kolkata HQ",
-      experience: "2–5 Years",
-      type: "Full-Time",
-      description: "Preparation of coordinated Composite Services Drawings (CSD) and Builder's Work Drawings (BWD) using ZWCAD / AutoCAD.",
+      department: "Cleanroom & Healthcare",
     },
   ];
 
   return (
-    <div className="min-h-screen flex flex-col bg-white text-airtech-charcoal">
+    <div className="min-h-screen flex flex-col bg-white text-airtech-charcoal font-sans">
       <Navbar />
 
-      <section className="bg-navy-950 text-white py-16 border-b border-navy-800">
+      {/* Header Section (Matching Panel 6) */}
+      <section className="bg-navy-950 text-white py-16 sm:py-20 border-b border-navy-800">
         <div className="max-w-7xl mx-auto px-6">
-          <div className="text-xs font-mono text-blueprint-400 uppercase tracking-wider mb-2">
-            Engineering Opportunities
+          <div className="text-xs font-mono text-blueprint-400 mb-2 flex items-center gap-2">
+            <Link href="/" className="hover:underline">Home</Link>
+            <span>/</span>
+            <span className="text-white">Careers</span>
           </div>
-          <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-white mb-4">
-            Join the AIRTECH Engineering Team
+          <h1 className="text-3xl sm:text-5xl font-bold tracking-tight text-white mb-3">
+            Careers at AIRTECH
           </h1>
-          <p className="text-sm text-steel-400 max-w-2xl leading-relaxed">
-            Collaborate on challenging commercial, healthcare, and industrial engineering projects with rigorous technical standards.
+          <p className="text-sm sm:text-base text-steel-300 max-w-2xl leading-relaxed">
+            Be part of a specialist engineering consultancy delivering meaningful projects.
           </p>
         </div>
       </section>
 
-      <section className="py-16 max-w-7xl mx-auto px-6 space-y-8">
-        <div className="border-b border-steel-200 pb-4">
-          <h2 className="text-xl font-bold text-airtech-navy">Current Openings in Kolkata</h2>
-        </div>
+      {/* 2-Column Split: Positions on Left, Photo on Right (Matching Panel 6) */}
+      <section className="py-16 max-w-7xl mx-auto px-6">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
+          {/* Left 7 Columns: Open Positions List */}
+          <div className="lg:col-span-7">
+            <div className="mb-6">
+              <h2 className="text-2xl font-bold text-navy-950 tracking-tight">
+                Open Positions
+              </h2>
+              <p className="text-xs text-steel-500 mt-1">
+                Explore engineering and project coordination opportunities across our design centers.
+              </p>
+            </div>
 
-        <div className="space-y-4">
-          {openings.map((job) => (
-            <div key={job.id} className="border border-steel-300 p-6 rounded-sm bg-airtech-offwhite/30 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-              <div>
-                <span className="text-xs font-mono font-semibold text-airtech-blue uppercase">{job.department}</span>
-                <h3 className="text-lg font-bold text-airtech-navy mt-0.5">{job.title}</h3>
-                <p className="text-xs text-airtech-muted mt-1 max-w-2xl">{job.description}</p>
-                <div className="flex flex-wrap gap-4 text-xs font-mono text-steel-600 mt-3">
-                  <span className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5" /> {job.location}</span>
-                  <span className="flex items-center gap-1"><Briefcase className="w-3.5 h-3.5" /> Exp: {job.experience}</span>
-                  <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5" /> {job.type}</span>
-                </div>
-              </div>
+            <div className="space-y-4">
+              {positions.map((pos) => (
+                <Link
+                  key={pos.id}
+                  href={`/contact?subject=${encodeURIComponent(`Application for ${pos.title}`)}`}
+                  className="bg-white border border-steel-300 rounded-sm p-5 flex items-center justify-between hover:border-airtech-blue hover:shadow-subtle transition-all group block"
+                >
+                  <div>
+                    <h3 className="text-base font-bold text-navy-950 group-hover:text-airtech-blue transition-colors">
+                      {pos.title}
+                    </h3>
+                    <div className="text-xs text-steel-500 font-mono mt-1">
+                      {pos.type} | {pos.location} • {pos.department}
+                    </div>
+                  </div>
 
+                  <div className="w-8 h-8 rounded-full border border-steel-300 flex items-center justify-center text-steel-400 group-hover:border-airtech-blue group-hover:text-airtech-blue group-hover:translate-x-1 transition-all">
+                    <ArrowRight className="w-4 h-4" />
+                  </div>
+                </Link>
+              ))}
+            </div>
+
+            <div className="mt-8">
               <Link
-                href={`/contact?job=${encodeURIComponent(job.title)}`}
-                className="bg-airtech-navy hover:bg-airtech-dark text-white text-xs font-semibold uppercase tracking-wider px-5 py-2.5 rounded-sm transition-colors shrink-0"
+                href="/contact?subject=General+Career+Inquiry"
+                className="bg-navy-950 hover:bg-navy-900 text-white text-xs font-semibold uppercase tracking-wider px-6 py-3.5 rounded-sm inline-flex items-center gap-2"
               >
-                Apply for Position
+                <span>View All Openings</span>
+                <ArrowRight className="w-3.5 h-3.5" />
               </Link>
             </div>
-          ))}
+          </div>
+
+          {/* Right 5 Columns: Modern Design Studio Photo (Matching Panel 6) */}
+          <div className="lg:col-span-5">
+            <div className="relative h-80 sm:h-96 rounded-sm overflow-hidden border border-steel-300 shadow-panel">
+              <Image
+                src="https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=1000&auto=format&fit=crop"
+                alt="Modern collaborative engineering office and design studio"
+                fill
+                className="object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-navy-950/80 via-transparent to-transparent" />
+              <div className="absolute bottom-4 left-4 right-4 text-white">
+                <div className="text-xs font-bold mb-1">AIRTECH Design Studio</div>
+                <div className="text-[11px] text-steel-300">
+                  Collaborative multidisciplinary workspace with high-end thermal modeling and CAD workstations.
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-6 p-4 bg-steel-50 border border-steel-200 rounded-sm text-xs text-steel-600 space-y-2">
+              <div className="font-bold text-navy-950 flex items-center gap-1.5">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                <span>What We Offer</span>
+              </div>
+              <p className="leading-relaxed">
+                Work directly with ASHRAE members and senior MEP consultants on national hospital and commercial developments, with full support for professional certifications (LEED AP, BEE, IGBC).
+              </p>
+            </div>
+          </div>
         </div>
       </section>
 

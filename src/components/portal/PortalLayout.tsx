@@ -20,7 +20,14 @@ import {
   Layers, 
   FileText, 
   HelpCircle,
-  Briefcase
+  Briefcase,
+  LayoutDashboard,
+  Calendar,
+  UserCheck,
+  BarChart3,
+  HelpCircle as QuestionIcon,
+  MessageSquare,
+  FileSpreadsheet
 } from "lucide-react";
 
 interface PortalLayoutProps {
@@ -41,43 +48,55 @@ export function PortalLayout({
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const handleLogout = () => {
-    // Clear cookies
     document.cookie = "airtech_session_role=; Max-Age=0; path=/;";
     document.cookie = "airtech_session_user=; Max-Age=0; path=/;";
-    router.push("/login");
+    router.push("/portal-access");
   };
 
-  // Define role-specific navigation links
+  // Exact navigation lists matching Panels 15, 16, 17 of the reference storyboard
   const getNavLinks = () => {
     switch (userRole) {
       case "owner":
       case "admin":
+        // Panel 15: Dashboard, Projects, Clients, Employees, Approvals, Documents, Finance, Reports, Settings
         return [
-          { href: "/admin", label: "Executive Overview", icon: Building2 },
-          { href: "/admin#projects", label: "Projects & Engineering", icon: FolderKanban },
-          { href: "/admin#drawings", label: "Drawing Register (CAD)", icon: Layers },
-          { href: "/admin#submittals", label: "RFIs & Submittals", icon: FileCheck2 },
-          { href: "/admin#invoices", label: "Finance & Invoicing (GST)", icon: Receipt },
-          { href: "/admin#payments", label: "Stripe & Bank Payments", icon: CreditCard },
-          { href: "/admin#employees", label: "Staff & Timesheets", icon: Users },
-          { href: "/admin#audit", label: "Security & Audit Logs", icon: ShieldCheck },
-          { href: "/admin#settings", label: "Company Settings", icon: Settings },
+          { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
+          { href: "/admin#projects", label: "Projects", icon: FolderKanban },
+          { href: "/admin#clients", label: "Clients", icon: Building2 },
+          { href: "/admin#employees", label: "Employees", icon: Users },
+          { href: "/admin#approvals", label: "Approvals", icon: FileCheck2 },
+          { href: "/admin#documents", label: "Documents", icon: FileText },
+          { href: "/admin#finance", label: "Finance", icon: Receipt },
+          { href: "/admin#reports", label: "Reports", icon: BarChart3 },
+          { href: "/admin#settings", label: "Settings", icon: Settings },
         ];
       case "employee":
+        // Panel 16: Dashboard, My Projects, Tasks, Timesheet, Leave, Documents, Calendar, Notifications, Profile
         return [
-          { href: "/employee", label: "My Engineering Desk", icon: Briefcase },
-          { href: "/employee#tasks", label: "Assigned Tasks & Subtasks", icon: FolderKanban },
-          { href: "/employee#drawings", label: "Drawing Uploads & CAD", icon: Layers },
-          { href: "/employee#timesheets", label: "Weekly Timesheets", icon: Clock },
-          { href: "/employee#leave", label: "Leave Requests", icon: Users },
+          { href: "/employee", label: "Dashboard", icon: LayoutDashboard },
+          { href: "/employee#projects", label: "My Projects", icon: FolderKanban },
+          { href: "/employee#tasks", label: "Tasks", icon: Briefcase },
+          { href: "/employee#timesheet", label: "Timesheet", icon: Clock },
+          { href: "/employee#leave", label: "Leave", icon: UserCheck },
+          { href: "/employee#documents", label: "Documents", icon: FileText },
+          { href: "/employee#calendar", label: "Calendar", icon: Calendar },
+          { href: "/employee#notifications", label: "Notifications", icon: Bell },
+          { href: "/employee#profile", label: "Profile", icon: Users },
         ];
       case "client":
       default:
+        // Panel 17: Dashboard, My Projects, Drawings, RFIs, Submittals, Approvals, Invoices, Payments, Documents, Profile
         return [
-          { href: "/client", label: "Project Summary", icon: Building2 },
-          { href: "/client#deliverables", label: "Approved Drawings & Specs", icon: Layers },
-          { href: "/client#submittals", label: "Technical Submittals", icon: FileCheck2 },
-          { href: "/client#invoices", label: "Invoices & Payments (Stripe)", icon: Receipt },
+          { href: "/client", label: "Dashboard", icon: LayoutDashboard },
+          { href: "/client#projects", label: "My Projects", icon: FolderKanban },
+          { href: "/client#drawings", label: "Drawings", icon: Layers },
+          { href: "/client#rfis", label: "RFIs", icon: MessageSquare },
+          { href: "/client#submittals", label: "Submittals", icon: FileSpreadsheet },
+          { href: "/client#approvals", label: "Approvals", icon: FileCheck2 },
+          { href: "/client#invoices", label: "Invoices", icon: Receipt },
+          { href: "/client#payments", label: "Payments", icon: CreditCard },
+          { href: "/client#documents", label: "Documents", icon: FileText },
+          { href: "/client#profile", label: "Profile", icon: Users },
         ];
     }
   };
@@ -85,9 +104,9 @@ export function PortalLayout({
   const navLinks = getNavLinks();
 
   return (
-    <div className="min-h-screen flex flex-col bg-airtech-offwhite text-airtech-charcoal font-sans">
+    <div className="min-h-screen flex flex-col bg-[#F3F4F6] text-airtech-charcoal font-sans">
       {/* Top Portal Command Bar */}
-      <header className="sticky top-0 z-40 bg-airtech-navy text-white h-14 border-b border-navy-900 px-6 flex items-center justify-between shadow-subtle">
+      <header className="sticky top-0 z-40 bg-navy-950 text-white h-14 border-b border-navy-900 px-6 flex items-center justify-between shadow-subtle">
         <div className="flex items-center gap-4">
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -97,15 +116,18 @@ export function PortalLayout({
           </button>
 
           <Link href="/" className="flex items-center gap-2">
-            <span className="w-7 h-7 bg-airtech-blue flex items-center justify-center font-bold text-xs rounded-sm font-mono">
-              AT
-            </span>
+            <span className="text-blueprint-400 font-bold text-base">▲</span>
             <span className="font-bold tracking-tight text-sm">AIRTECH</span>
             <span className="text-steel-400 text-xs hidden sm:inline">| {portalTitle}</span>
           </Link>
         </div>
 
         <div className="flex items-center gap-4 text-xs">
+          <button className="text-steel-400 hover:text-white relative p-1">
+            <Bell className="w-4 h-4" />
+            <span className="w-2 h-2 bg-airtech-blue rounded-full absolute top-1 right-1" />
+          </button>
+
           <div className="hidden sm:flex items-center gap-2 bg-navy-900 border border-navy-800 px-3 py-1 rounded-sm">
             <span className="w-2 h-2 bg-emerald-500 rounded-full"></span>
             <span className="text-steel-300 font-mono text-[11px]">{userEmail}</span>
@@ -127,11 +149,13 @@ export function PortalLayout({
 
       {/* Main Portal Body */}
       <div className="flex-1 flex">
-        {/* Left Sidebar (Desktop) */}
-        <aside className="hidden md:flex flex-col w-64 bg-white border-r border-steel-300 p-4 shrink-0">
-          <div className="text-[10px] font-mono font-semibold text-airtech-muted uppercase tracking-wider px-3 mb-3">
-            Navigation Menu
+        {/* Left Sidebar (Desktop, Deep Dark Navy matching Panels 15, 16, 17) */}
+        <aside className="hidden md:flex flex-col w-56 bg-navy-950 border-r border-navy-900 p-4 shrink-0 text-white">
+          <div className="flex items-center gap-2 px-3 py-2 mb-4 border-b border-navy-900 pb-3">
+            <span className="text-blueprint-400 font-bold text-lg">▲</span>
+            <span className="font-bold tracking-tight text-sm text-white">AIRTECH</span>
           </div>
+
           <nav className="space-y-1 flex-1">
             {navLinks.map((link) => {
               const Icon = link.icon;
@@ -140,27 +164,26 @@ export function PortalLayout({
                 <Link
                   key={link.label}
                   href={link.href}
-                  className={`flex items-center gap-2.5 px-3 py-2 text-xs font-medium rounded-sm transition-colors ${
+                  className={`flex items-center gap-3 px-3 py-2 text-xs font-medium rounded-sm transition-colors ${
                     isActive
-                      ? "bg-airtech-pale text-airtech-navy font-semibold border-l-2 border-airtech-blue"
-                      : "text-steel-700 hover:bg-steel-100 hover:text-airtech-navy"
+                      ? "bg-blueprint-600/30 text-blueprint-300 font-bold border-l-2 border-blueprint-400"
+                      : "text-steel-400 hover:bg-navy-900 hover:text-white"
                   }`}
                 >
-                  <Icon className="w-4 h-4 text-airtech-blue shrink-0" />
+                  <Icon className="w-4 h-4 shrink-0 text-blueprint-400" />
                   <span>{link.label}</span>
                 </Link>
               );
             })}
           </nav>
 
-          {/* Bottom Compliance Badge */}
-          <div className="pt-4 border-t border-steel-200 text-[10px] font-mono text-steel-500 space-y-1">
-            <div className="flex items-center gap-1.5 text-emerald-700">
+          {/* Bottom Security Info */}
+          <div className="pt-4 border-t border-navy-900 text-[10px] font-mono text-steel-500 space-y-1">
+            <div className="flex items-center gap-1.5 text-emerald-400">
               <ShieldCheck className="w-3.5 h-3.5" />
-              <span>RLS Tenant Isolated</span>
+              <span>RLS Isolation Active</span>
             </div>
-            <div>Database: PostgreSQL (Supabase)</div>
-            <div>Payments: Stripe India / Bank UTR</div>
+            <div>PostgreSQL Session Guard</div>
           </div>
         </aside>
 

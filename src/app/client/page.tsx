@@ -14,385 +14,404 @@ import {
   AlertCircle,
   Clock,
   RefreshCw,
-  QrCode
+  QrCode,
+  FileCheck2,
+  Calendar
 } from "lucide-react";
 
 export default function ClientPortalPage() {
   const [payingInvoice, setPayingInvoice] = useState<string | null>(null);
   const [showManualModal, setShowManualModal] = useState(false);
+  const [selectedInvoiceForManual, setSelectedInvoiceForManual] = useState<string | null>(null);
   const [utrNumber, setUtrNumber] = useState("");
   const [manualSuccess, setManualSuccess] = useState(false);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
 
-  // Client-specific verified records for Apollo Multispeciality Hospitals Ltd
-  const clientProject = {
-    code: "AT-2026-HOSP-01",
-    name: "Apollo Eastern Wing Super-Speciality Expansion",
-    organization: "Apollo Multispeciality Hospitals Ltd",
-    city: "Kolkata",
-    status: "Detailed Engineering & GFC Phase",
-    disciplines: "HVAC • Fire Protection • PHE • Electrical • BMS",
-    leadConsultant: "Senior HVAC Technical Advisor",
-    progress: "60%",
-  };
+  const kpis = [
+    { label: "Active Projects", value: "3", sub: "Currently engaged", color: "text-navy-950" },
+    { label: "Pending Approvals", value: "2", sub: "Drawing R2 & Submittal", color: "text-amber-600" },
+    { label: "Due Amount", value: "₹ 24.50 L", sub: "Current billing cycle", color: "text-airtech-blue" },
+    { label: "Upcoming Meeting", value: "1", sub: "16 Mar • Site Coordination", color: "text-emerald-600" },
+  ];
 
-  const approvedDrawings = [
+  const projectProgress = [
+    { name: "City Hospital", progress: 78, phase: "Detailed Engineering" },
+    { name: "Retail Mall", progress: 46, phase: "Concept & Schematics" },
+    { name: "Office Tower", progress: 92, phase: "GFC Drawings & Testing" },
+  ];
+
+  const recentUpdates = [
     {
-      number: "AT-HOSP-HVAC-DWG-001",
-      title: "Chiller Plant Room Primary/Secondary Piping Layout",
-      rev: "R1",
-      approvalDate: "2026-10-18",
-      cad: "ZWCAD GFC",
-      status: "Approved for Construction",
+      id: "up-1",
+      title: "Drawing R2 for approval",
+      project: "City Hospital",
+      time: "1 day ago",
+      type: "drawing",
     },
     {
-      number: "AT-HOSP-HVAC-DWG-002",
-      title: "Modular OT Laminar Flow Diffuser & HEPA Ceiling Scheme",
-      rev: "R2",
-      approvalDate: "2026-10-24",
-      cad: "ZWCAD GFC",
-      status: "Approved for Construction",
+      id: "up-2",
+      title: "RFI-021 response submitted",
+      project: "Retail Mall",
+      time: "2 days ago",
+      type: "rfi",
+    },
+    {
+      id: "up-3",
+      title: "Invoice INV-0387 generated",
+      project: "Office Tower",
+      time: "3 days ago",
+      type: "invoice",
     },
   ];
 
-  const clientInvoices = [
+  const pendingInvoices = [
     {
-      id: "inv-2222222-2222-2222-2222-222222222222",
-      number: "INV-2026-0042",
-      milestone: "Milestone 2: Detailed Design & BOQ Preparation (35%)",
-      dueDate: "2026-11-10",
-      subtotal: 1225000.0,
-      gst: 220500.0, // 18% GST (9% CGST + 9% SGST)
-      totalAmount: 1445500.0,
-      balance: 1445500.0,
-      status: "Issued",
+      number: "INV-2026-0387",
+      project: "Office Tower",
+      description: "Milestone 3: GFC Drawings & Composite Services Sign-off",
+      amount: "₹12,50,000",
+      amountNumeric: 1250000,
+      dueDate: "2026-03-25",
+      status: "Payment Due",
     },
     {
-      id: "inv-1111111-1111-1111-1111-111111111111",
-      number: "INV-2026-0041",
-      milestone: "Milestone 1: Heat Load & Schematic Concept (25%)",
-      dueDate: "2026-09-05",
-      subtotal: 875000.0,
-      gst: 157500.0,
-      totalAmount: 1032500.0,
-      balance: 0.0,
-      status: "Paid",
-      paymentRef: "STRIPE_CH_98234",
+      number: "INV-2026-0342",
+      project: "City Hospital",
+      description: "Milestone 2: Modular OT Ventilation & Medical Gas Schematics",
+      amount: "₹12,00,000",
+      amountNumeric: 1200000,
+      dueDate: "2026-03-30",
+      status: "Payment Due",
     },
   ];
 
-  // Initiate Stripe Hosted Checkout
-  const handlePayNowStripe = async (inv: typeof clientInvoices[0]) => {
-    setPayingInvoice(inv.number);
+  // Handle Stripe Hosted Checkout
+  const handleStripeCheckout = async (invoice: { number: string; amountNumeric: number; description: string }) => {
     setCheckoutError(null);
+    setPayingInvoice(invoice.number);
 
     try {
       const res = await fetch("/api/payments/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          invoiceId: inv.id,
-          invoiceNumber: inv.number,
-          clientId: "11111111-1111-1111-1111-111111111111",
-          clientEmail: "projects@apollo-kolkata.com",
-          clientName: "Apollo Multispeciality Hospitals Ltd",
-          amount: inv.balance,
-          currency: "inr",
-          projectName: clientProject.name,
+          invoiceNumber: invoice.number,
+          amount: invoice.amountNumeric,
+          clientEmail: "accounts@abcdevelopments.com",
+          clientName: "ABC Developments Ltd",
+          description: invoice.description,
         }),
       });
 
       const data = await res.json();
 
       if (!res.ok) {
-        setCheckoutError(data.error || "Failed to create Stripe payment session.");
-        setPayingInvoice(null);
-        return;
+        throw new Error(data.error || "Unable to initiate payment session.");
       }
 
-      // Redirect client to Stripe Hosted Checkout
-      if (data.sessionUrl) {
-        window.location.href = data.sessionUrl;
+      if (data.url) {
+        window.location.href = data.url;
       }
-    } catch {
-      setCheckoutError("Stripe checkout server could not be reached.");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Payment processing error";
+      setCheckoutError(msg);
       setPayingInvoice(null);
     }
   };
 
+  // Handle Offline Bank Transfer UTR Submission
   const handleManualPaymentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!utrNumber) return;
+    if (!utrNumber.trim()) return;
 
     try {
       const res = await fetch("/api/payments/manual", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          invoiceId: clientInvoices[0].id,
-          amount: clientInvoices[0].balance,
-          bankReferenceUtr: utrNumber,
-          notes: "Manual NEFT/RTGS transfer reported by Apollo accounts.",
+          invoiceNumber: selectedInvoiceForManual || "INV-2026-0387",
+          utrNumber: utrNumber.trim(),
+          paymentMode: "neft",
+          amount: 1250000,
         }),
       });
 
-      if (res.ok) {
-        setManualSuccess(true);
-        setTimeout(() => {
-          setShowManualModal(false);
-          setManualSuccess(false);
-          setUtrNumber("");
-        }, 3000);
+      if (!res.ok) {
+        throw new Error("Unable to log UTR reference.");
       }
+
+      setManualSuccess(true);
+      setTimeout(() => {
+        setManualSuccess(false);
+        setShowManualModal(false);
+        setUtrNumber("");
+      }, 3000);
     } catch {
-      // Handle gracefully
+      setCheckoutError("Failed to record UTR reference.");
     }
   };
 
   return (
-    <PortalLayout portalTitle="Client Organization Portal" userRole="client" userEmail="projects@apollo-kolkata.com">
-      <div className="space-y-8">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-steel-300 pb-4">
-          <div>
-            <div className="text-xs font-mono font-semibold uppercase text-airtech-blue">
-              Client Authorized Workspace
+    <PortalLayout userRole="client" userEmail="accounts@abcdevelopments.com" portalTitle="Client Portal">
+      {/* Header (Matching Panel 17) */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-6 mb-6 border-b border-steel-200">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-navy-950">
+            Client Dashboard
+          </h1>
+          <p className="text-xs text-steel-500 mt-0.5">
+            Welcome, ABC Developments! Review deliverables, drawing revisions, and invoices.
+          </p>
+        </div>
+
+        <div className="flex items-center gap-3 mt-4 sm:mt-0">
+          <span className="text-[11px] font-mono bg-slate-100 text-navy-900 border border-slate-300 px-3 py-1 rounded-sm flex items-center gap-1.5 font-semibold">
+            <Building2 className="w-3.5 h-3.5" />
+            <span>ABC Developments Ltd</span>
+          </span>
+        </div>
+      </div>
+
+      {checkoutError && (
+        <div className="mb-6 p-4 bg-red-50 border border-red-200 text-airtech-red text-xs rounded-sm flex items-start gap-2">
+          <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+          <span>{checkoutError}</span>
+        </div>
+      )}
+
+      {/* 4 KPI Cards (Matching Panel 17) */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
+        {kpis.map((kpi, idx) => (
+          <div key={idx} className="bg-white border border-steel-300 rounded-sm p-6 shadow-sm">
+            <div className={`text-2xl sm:text-3xl font-bold font-mono tracking-tight ${kpi.color}`}>
+              {kpi.value}
             </div>
-            <h1 className="text-2xl font-bold tracking-tight text-airtech-navy mt-0.5">
-              {clientProject.organization}
-            </h1>
-            <div className="text-xs text-steel-500 mt-1">
-              Active Project: {clientProject.name} ({clientProject.code})
+            <div className="text-xs font-semibold text-navy-950 mt-1">
+              {kpi.label}
+            </div>
+            <div className="text-[11px] text-steel-400 mt-0.5 font-mono">
+              {kpi.sub}
             </div>
           </div>
-          <span className="inline-flex items-center gap-1.5 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs px-3 py-1.5 rounded-sm font-mono">
-            <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-            <span>Tenant Isolated & Verified</span>
+        ))}
+      </div>
+
+      {/* Main 2-Column Split (Matching Panel 17) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-8">
+        {/* Left 6 Columns: Project Progress Bars */}
+        <div className="lg:col-span-6 bg-white border border-steel-300 rounded-sm p-6 shadow-sm flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-base font-bold text-navy-950">
+                Project Progress
+              </h2>
+              <span className="text-xs font-mono text-steel-400">Milestone Completion</span>
+            </div>
+
+            <div className="space-y-5 py-2">
+              {projectProgress.map((proj) => (
+                <div key={proj.name} className="space-y-1.5">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-bold text-navy-950">{proj.name}</span>
+                    <span className="font-mono font-bold text-airtech-blue">{proj.progress}%</span>
+                  </div>
+                  <div className="w-full bg-steel-100 h-2.5 rounded-full overflow-hidden">
+                    <div
+                      className="bg-navy-900 h-full rounded-full transition-all duration-500"
+                      style={{ width: `${proj.progress}%` }}
+                    />
+                  </div>
+                  <div className="text-[11px] text-steel-400 font-mono">
+                    Phase: {proj.phase}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="pt-4 border-t border-steel-100 flex items-center justify-between text-xs text-steel-500">
+            <span>Overall Portfolio Progress: 72%</span>
+            <a href="#projects" className="text-airtech-blue font-semibold hover:underline">
+              View All Milestones →
+            </a>
+          </div>
+        </div>
+
+        {/* Right 6 Columns: Recent Updates (Matching Panel 17) */}
+        <div className="lg:col-span-6 bg-white border border-steel-300 rounded-sm p-6 shadow-sm flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-base font-bold text-navy-950">
+                Recent Updates
+              </h2>
+              <span className="text-xs font-mono text-steel-400">Activity Log</span>
+            </div>
+
+            <div className="space-y-4">
+              {recentUpdates.map((update) => (
+                <div key={update.id} className="flex items-start gap-3 p-3.5 bg-steel-50 rounded-sm border border-steel-200">
+                  <div className="w-2 h-2 rounded-full bg-navy-900 mt-1.5 shrink-0" />
+                  <div className="flex-1">
+                    <div className="text-xs font-bold text-navy-950">
+                      {update.title}
+                    </div>
+                    <div className="text-[11px] text-steel-500">
+                      Project: <strong className="text-navy-900">{update.project}</strong>
+                    </div>
+                  </div>
+                  <div className="text-[10px] font-mono text-steel-400 shrink-0">
+                    {update.time}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="pt-4 border-t border-steel-100 mt-4 text-right">
+            <a href="#drawings" className="text-xs font-semibold text-airtech-blue hover:underline">
+              Review Drawings Register →
+            </a>
+          </div>
+        </div>
+      </div>
+
+      {/* Commercial Invoicing & Payment Processing */}
+      <div id="invoices" className="bg-white border border-steel-300 rounded-sm p-6 shadow-sm mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4 pb-3 border-b border-steel-200">
+          <div>
+            <h2 className="text-base font-bold text-navy-950">
+              Outstanding Invoices & Settlement
+            </h2>
+            <p className="text-xs text-steel-500">
+              Select an invoice to settle via Stripe card payment or submit NEFT/RTGS/UPI bank UTR reference.
+            </p>
+          </div>
+          <span className="text-xs font-mono text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-sm border border-emerald-200">
+            GST HSN Code: 998333 (18%)
           </span>
         </div>
 
-        {/* Project Milestone Status Banner */}
-        <div className="border border-steel-300 bg-white p-6 rounded-sm shadow-subtle">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
-            <div>
-              <div className="text-xs font-mono text-steel-500 uppercase">Consulting Engineering Progress</div>
-              <div className="text-lg font-bold text-airtech-navy mt-0.5">{clientProject.status}</div>
-            </div>
-            <div className="text-right">
-              <span className="font-mono text-2xl font-bold text-emerald-700">{clientProject.progress}</span>
-              <span className="text-xs text-steel-400 block font-mono">COMPLETED</span>
-            </div>
-          </div>
-
-          {/* Progress Bar */}
-          <div className="w-full bg-steel-200 h-2 rounded-full overflow-hidden">
-            <div className="bg-airtech-blue h-full w-[60%]"></div>
-          </div>
-        </div>
-
-        {/* Section: Invoices & Payment (Stripe + Bank Alternative) */}
-        <div id="invoices" className="border border-steel-300 bg-white rounded-sm overflow-hidden shadow-subtle">
-          <div className="p-4 border-b border-steel-200 bg-airtech-offwhite flex justify-between items-center">
-            <div className="flex items-center gap-2">
-              <Receipt className="w-4 h-4 text-airtech-blue" />
-              <h2 className="text-sm font-bold uppercase tracking-wider text-airtech-navy">
-                Invoices & Online Payment (Stripe / Bank UTR)
-              </h2>
-            </div>
-            <span className="text-xs font-mono text-steel-500">GSTIN: 19AAACA1234F1Z1</span>
-          </div>
-
-          {checkoutError && (
-            <div className="p-4 bg-red-50 border-b border-red-200 text-airtech-red text-xs flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 shrink-0" />
-              <span>{checkoutError}</span>
-            </div>
-          )}
-
-          <div className="overflow-x-auto">
-            <table className="w-full tech-table text-left">
-              <thead>
-                <tr>
-                  <th>Invoice No</th>
-                  <th>Milestone Deliverable</th>
-                  <th>Due Date</th>
-                  <th>Taxable Value</th>
-                  <th>GST (18%)</th>
-                  <th>Total Due</th>
-                  <th>Status</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-steel-200">
-                {clientInvoices.map((inv) => (
-                  <tr key={inv.number} className="hover:bg-steel-50">
-                    <td className="font-mono text-xs font-bold text-airtech-navy">{inv.number}</td>
-                    <td className="text-xs text-airtech-charcoal font-medium">{inv.milestone}</td>
-                    <td className="font-mono text-xs text-steel-500">{inv.dueDate}</td>
-                    <td className="font-mono text-xs">₹{inv.subtotal.toLocaleString()}</td>
-                    <td className="font-mono text-xs text-steel-500">₹{inv.gst.toLocaleString()}</td>
-                    <td className="font-mono text-xs font-bold text-airtech-navy">₹{inv.totalAmount.toLocaleString()}</td>
-                    <td>
-                      <span className={`inline-block px-2 py-0.5 text-[10px] font-mono font-semibold rounded-sm border ${
-                        inv.status === "Paid" ? "bg-emerald-50 text-emerald-800 border-emerald-200" : "bg-amber-50 text-amber-800 border-amber-200"
-                      }`}>
-                        {inv.status}
-                      </span>
-                    </td>
-                    <td>
-                      {inv.status !== "Paid" ? (
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => handlePayNowStripe(inv)}
-                            disabled={payingInvoice === inv.number}
-                            className="bg-emerald-700 hover:bg-emerald-800 text-white text-[11px] font-semibold px-3 py-1.5 rounded-sm transition-colors flex items-center gap-1.5 disabled:opacity-50"
-                          >
-                            {payingInvoice === inv.number ? (
-                              <RefreshCw className="w-3 h-3 animate-spin" />
-                            ) : (
-                              <>
-                                <CreditCard className="w-3 h-3" />
-                                <span>Pay with Stripe</span>
-                              </>
-                            )}
-                          </button>
-
-                          <button
-                            onClick={() => setShowManualModal(true)}
-                            className="bg-white hover:bg-steel-100 text-airtech-navy border border-steel-300 text-[11px] font-semibold px-2.5 py-1.5 rounded-sm transition-colors"
-                          >
-                            Bank Transfer / UPI
-                          </button>
-                        </div>
-                      ) : (
-                        <span className="text-[11px] font-mono text-emerald-700 font-semibold flex items-center gap-1">
-                          <CheckCircle2 className="w-3.5 h-3.5" />
-                          <span>Receipt Confirmed</span>
-                        </span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* Section: Approved Drawings Register */}
-        <div id="deliverables" className="border border-steel-300 bg-white rounded-sm overflow-hidden shadow-subtle">
-          <div className="p-4 border-b border-steel-200 bg-airtech-offwhite flex justify-between items-center">
-            <div className="flex items-center gap-2">
-              <Layers className="w-4 h-4 text-airtech-blue" />
-              <h2 className="text-sm font-bold uppercase tracking-wider text-airtech-navy">
-                Approved Good For Construction (GFC) Drawings
-              </h2>
-            </div>
-            <span className="text-xs font-mono text-steel-500">Verified Releases Only</span>
-          </div>
-
-          <div className="overflow-x-auto">
-            <table className="w-full tech-table text-left">
-              <thead>
-                <tr>
-                  <th>Drawing Number</th>
-                  <th>Title & Description</th>
-                  <th>Approved Rev</th>
-                  <th>Approval Date</th>
-                  <th>Format</th>
-                  <th>Download</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-steel-200">
-                {approvedDrawings.map((dwg) => (
-                  <tr key={dwg.number} className="hover:bg-steel-50">
-                    <td className="font-mono text-xs font-bold text-airtech-navy">{dwg.number}</td>
-                    <td className="text-xs text-airtech-charcoal font-medium">{dwg.title}</td>
-                    <td className="font-mono text-xs font-bold text-airtech-blue">{dwg.rev}</td>
-                    <td className="font-mono text-xs text-steel-500">{dwg.approvalDate}</td>
-                    <td className="font-mono text-xs text-steel-600">{dwg.cad}</td>
-                    <td>
-                      <button
-                        onClick={() => alert(`Downloading verified signed copy: ${dwg.number}_${dwg.rev}.pdf`)}
-                        className="text-xs text-airtech-blue hover:underline flex items-center gap-1 font-medium"
-                      >
-                        <Download className="w-3 h-3" />
-                        <span>Signed PDF</span>
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* Manual Bank Transfer Modal */}
-        {showManualModal && (
-          <div className="fixed inset-0 bg-navy-950/60 z-50 flex items-center justify-center p-4">
-            <div className="bg-white border border-steel-300 rounded-sm p-6 max-w-md w-full shadow-panel space-y-4">
-              <div className="flex justify-between items-center border-b border-steel-200 pb-3">
-                <h3 className="text-sm font-bold text-airtech-navy uppercase tracking-wider">
-                  Direct Bank Transfer / UPI Instructions
-                </h3>
-                <button
-                  onClick={() => setShowManualModal(false)}
-                  className="text-steel-400 hover:text-steel-600 text-sm font-bold"
-                >
-                  ✕
-                </button>
-              </div>
-
-              <div className="bg-airtech-offwhite p-4 rounded-sm border border-steel-200 text-xs font-mono space-y-1.5 text-airtech-charcoal">
-                <div>Beneficiary: AIRTECH</div>
-                <div>Bank: State Bank of India</div>
-                <div>Account No: 392019401928 (Current)</div>
-                <div>IFSC: SBIN0001234</div>
-                <div>Branch: Rajarhat Gopalpur, Kolkata</div>
-                <div className="pt-1 text-airtech-blue font-bold">UPI ID: airtechmep@sbi</div>
-              </div>
-
-              {manualSuccess ? (
-                <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs rounded-sm flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                  <span>UTR submitted! Our finance team will verify credit and update your invoice status.</span>
+        <div className="space-y-4">
+          {pendingInvoices.map((inv) => (
+            <div
+              key={inv.number}
+              className="border border-steel-300 rounded-sm p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-steel-50/50"
+            >
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="font-mono font-bold text-xs text-airtech-blue">
+                    {inv.number}
+                  </span>
+                  <span className="text-xs font-semibold text-navy-950">
+                    • {inv.project}
+                  </span>
                 </div>
-              ) : (
-                <form onSubmit={handleManualPaymentSubmit} className="space-y-3">
-                  <div>
-                    <label className="block text-xs font-semibold text-airtech-charcoal uppercase tracking-wider mb-1">
-                      Bank Transaction Reference / UTR Number *
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={utrNumber}
-                      onChange={(e) => setUtrNumber(e.target.value)}
-                      placeholder="e.g. SBIN26301928471"
-                      className="w-full text-xs p-2.5 border border-steel-300 rounded-sm font-mono"
-                    />
-                  </div>
+                <div className="text-xs text-steel-600 mt-1">
+                  {inv.description}
+                </div>
+                <div className="text-[11px] font-mono text-steel-400 mt-1">
+                  Due: {inv.dueDate}
+                </div>
+              </div>
 
-                  <div className="flex justify-end gap-2 pt-2">
-                    <button
-                      type="button"
-                      onClick={() => setShowManualModal(false)}
-                      className="px-4 py-2 border border-steel-300 text-xs font-medium rounded-sm text-steel-700 hover:bg-steel-100"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      className="px-4 py-2 bg-airtech-navy text-white text-xs font-semibold rounded-sm hover:bg-airtech-dark"
-                    >
-                      Record Bank Deposit
-                    </button>
-                  </div>
-                </form>
-              )}
+              <div className="flex flex-col sm:items-end gap-2 w-full sm:w-auto">
+                <div className="text-lg font-bold font-mono text-navy-950">
+                  {inv.amount}
+                </div>
+
+                <div className="flex items-center gap-2 w-full sm:w-auto">
+                  <button
+                    onClick={() => handleStripeCheckout(inv)}
+                    disabled={payingInvoice === inv.number}
+                    className="bg-navy-950 hover:bg-navy-900 text-white text-xs font-semibold px-4 py-2 rounded-sm transition-colors flex items-center justify-center gap-1.5 shadow-sm disabled:opacity-50 flex-1 sm:flex-initial"
+                  >
+                    {payingInvoice === inv.number ? (
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <>
+                        <CreditCard className="w-3.5 h-3.5" />
+                        <span>Pay via Stripe</span>
+                      </>
+                    )}
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setSelectedInvoiceForManual(inv.number);
+                      setShowManualModal(true);
+                    }}
+                    className="bg-white hover:bg-steel-100 text-navy-950 border border-steel-300 text-xs font-semibold px-4 py-2 rounded-sm transition-colors flex items-center justify-center gap-1.5 flex-1 sm:flex-initial"
+                  >
+                    <QrCode className="w-3.5 h-3.5 text-steel-600" />
+                    <span>Bank Transfer / UPI</span>
+                  </button>
+                </div>
+              </div>
             </div>
-          </div>
-        )}
+          ))}
+        </div>
       </div>
+
+      {/* Bank Transfer Modal */}
+      {showManualModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
+          <div className="bg-white rounded-sm border border-steel-300 max-w-md w-full p-6 shadow-2xl">
+            <h3 className="text-base font-bold text-navy-950 mb-1">
+              Bank Transfer / UPI Settlement
+            </h3>
+            <p className="text-xs text-steel-500 mb-4">
+              Invoice Reference: <strong className="font-mono text-navy-900">{selectedInvoiceForManual}</strong>
+            </p>
+
+            <div className="bg-steel-50 border border-steel-200 rounded-sm p-4 text-xs font-mono text-steel-700 space-y-1 mb-4">
+              <div>Bank: HDFC Bank Ltd</div>
+              <div>Account Name: AIRTECH Engineering Consultancy</div>
+              <div>Account No: 50200088991122</div>
+              <div>IFSC: HDFC0001234</div>
+              <div>UPI VPA: airtech.mep@hdfcbank</div>
+            </div>
+
+            {manualSuccess ? (
+              <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs rounded-sm flex items-center gap-2 mb-4">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                <span>UTR logged successfully. Our finance team will verify and reconcile.</span>
+              </div>
+            ) : (
+              <form onSubmit={handleManualPaymentSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-semibold text-navy-950 mb-1">
+                    Bank UTR / IMPS / UPI Reference No *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. HDFC20261101987654"
+                    value={utrNumber}
+                    onChange={(e) => setUtrNumber(e.target.value)}
+                    className="w-full text-xs p-2.5 border border-steel-300 rounded-sm font-mono bg-white focus:border-navy-950 focus:outline-none"
+                  />
+                </div>
+
+                <div className="flex items-center justify-end gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowManualModal(false)}
+                    className="text-xs text-steel-600 hover:text-navy-950 px-4 py-2"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="bg-navy-950 hover:bg-navy-900 text-white text-xs font-semibold px-5 py-2 rounded-sm"
+                  >
+                    Submit Reference
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
     </PortalLayout>
   );
 }

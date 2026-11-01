@@ -25,25 +25,21 @@ export async function POST(req: NextRequest) {
 
     // Role-based destination determination (Never trust client-supplied role)
     const role = verification.userRole || "client";
-    let redirectUrl = "/portal/client";
+    let redirectUrl = "/client";
 
     switch (role) {
       case "owner":
       case "admin":
-        redirectUrl = "/portal/admin";
+        redirectUrl = "/admin";
         break;
       case "project_manager":
-        redirectUrl = "/portal/manager";
-        break;
       case "finance_admin":
-        redirectUrl = "/portal/finance";
-        break;
       case "employee":
-        redirectUrl = "/portal/employee";
+        redirectUrl = "/employee";
         break;
       case "client":
       default:
-        redirectUrl = "/portal/client";
+        redirectUrl = "/client";
         break;
     }
 

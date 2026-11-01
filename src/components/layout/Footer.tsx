@@ -8,17 +8,15 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
           {/* Column 1: Company Profile */}
           <div className="md:col-span-1">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-9 h-9 bg-navy-800 border border-navy-700 flex items-center justify-center text-white font-bold text-base rounded-sm">
-                AT
-              </div>
+            <div className="flex items-center gap-2.5 mb-4">
+              <span className="text-2xl text-blueprint-400 font-bold">▲</span>
               <div>
-                <div className="font-bold text-lg text-white tracking-tight">AIRTECH</div>
+                <div className="font-extrabold text-lg text-white tracking-tight">AIRTECH</div>
                 <div className="text-[10px] text-steel-400 tracking-wider uppercase">MEP Engineering Consultancy</div>
               </div>
             </div>
             <p className="text-xs text-steel-400 leading-relaxed mb-6">
-              Independent technical consultancy delivering specialized HVAC, Fire Fighting, Electrical, Plumbing and Building Management System design across Eastern India.
+              Specialist engineering consultancy delivering integrated, efficient and sustainable building services solutions across commercial, institutional and healthcare sectors.
             </p>
             <div className="text-xs text-steel-400 space-y-1">
               <div>GSTIN: 19AABCA1234F1Z5</div>
@@ -29,15 +27,15 @@ export function Footer() {
           {/* Column 2: Engineering Disciplines */}
           <div>
             <div className="text-xs font-semibold uppercase tracking-wider text-white mb-4">
-              Disciplines
+              Our Disciplines
             </div>
             <ul className="space-y-2.5 text-xs">
-              <li><Link href="/#services" className="hover:text-white transition-colors">HVAC & Cleanroom Engineering</Link></li>
-              <li><Link href="/#services" className="hover:text-white transition-colors">Fire Protection & Hydrant Systems</Link></li>
-              <li><Link href="/#services" className="hover:text-white transition-colors">Electrical Substation & Distribution</Link></li>
-              <li><Link href="/#services" className="hover:text-white transition-colors">Public Health & Plumbing (PHE)</Link></li>
-              <li><Link href="/#services" className="hover:text-white transition-colors">Building Management Systems (IBMS)</Link></li>
-              <li><Link href="/#services" className="hover:text-white transition-colors">Energy Modeling & ECBC Compliance</Link></li>
+              <li><Link href="/services#hvac" className="hover:text-white transition-colors">HVAC Engineering & Cleanrooms</Link></li>
+              <li><Link href="/services#fire" className="hover:text-white transition-colors">Fire Fighting Engineering</Link></li>
+              <li><Link href="/services#plumbing" className="hover:text-white transition-colors">Plumbing & Public Health (PHE)</Link></li>
+              <li><Link href="/services#electrical" className="hover:text-white transition-colors">Electrical System Design</Link></li>
+              <li><Link href="/services#bms" className="hover:text-white transition-colors">Building Management Systems (BMS)</Link></li>
+              <li><Link href="/services#energy" className="hover:text-white transition-colors">Energy Modeling & ECBC Audits</Link></li>
             </ul>
           </div>
 
@@ -47,19 +45,18 @@ export function Footer() {
               Enterprise Portals
             </div>
             <ul className="space-y-2.5 text-xs">
-              <li><Link href="/auth/login" className="hover:text-white transition-colors">Client Project Portal & Drawings</Link></li>
-              <li><Link href="/auth/login" className="hover:text-white transition-colors">Online Invoice Payment (Stripe / Bank)</Link></li>
-              <li><Link href="/auth/login" className="hover:text-white transition-colors">Project Manager Workspace</Link></li>
-              <li><Link href="/auth/login" className="hover:text-white transition-colors">Finance & Billing Management</Link></li>
-              <li><Link href="/auth/login" className="hover:text-white transition-colors">Employee Timesheets & Tasks</Link></li>
-              <li><Link href="/auth/login" className="hover:text-white transition-colors">Administrator Console</Link></li>
+              <li><Link href="/owner/login" className="hover:text-white transition-colors">Owner & Super Admin Portal</Link></li>
+              <li><Link href="/employee/login" className="hover:text-white transition-colors">Employee Engineering Workspace</Link></li>
+              <li><Link href="/client/login" className="hover:text-white transition-colors">Client Project & Drawing Portal</Link></li>
+              <li><Link href="/portal-access" className="hover:text-white transition-colors">Portal Selection Hub</Link></li>
+              <li><Link href="/register" className="hover:text-white transition-colors">New Account Registration</Link></li>
             </ul>
           </div>
 
-          {/* Column 4: Contact & Kolkata Office */}
+          {/* Column 4: Contact & Locations */}
           <div>
             <div className="text-xs font-semibold uppercase tracking-wider text-white mb-4">
-              Registered Office
+              Registered Headquarters
             </div>
             <div className="space-y-3 text-xs">
               <div className="flex items-start gap-2.5">
@@ -68,11 +65,11 @@ export function Footer() {
               </div>
               <div className="flex items-center gap-2.5">
                 <Phone className="w-4 h-4 text-blueprint-400 shrink-0" />
-                <span>+91 98363 44430</span>
+                <span>+91 98363 44430 / +91 80 1234 5678</span>
               </div>
               <div className="flex items-center gap-2.5">
                 <Mail className="w-4 h-4 text-blueprint-400 shrink-0" />
-                <span>contact@airtech-mep.com</span>
+                <span>info@airtech.in / contact@airtech-mep.com</span>
               </div>
             </div>
           </div>
@@ -84,7 +81,7 @@ export function Footer() {
             &copy; {new Date().getFullYear()} AIRTECH Engineering Consultancy. All rights reserved.
           </div>
           <div className="flex items-center gap-6">
-            <span>Powered by Supabase & Stripe (India Compliant)</span>
+            <span>Supabase PostgreSQL & Stripe Verified</span>
             <span>•</span>
             <span className="flex items-center gap-1.5 text-steel-400">
               <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
