@@ -43,16 +43,20 @@ export async function POST(req: NextRequest) {
         break;
     }
 
-    // Record login in security audit log
+    // Record login in security audit log safely
     const ipAddress = req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip") || "127.0.0.1";
-    await supabaseAdmin.from("audit_logs").insert({
-      user_id: verification.userId,
-      action: "auth.login_otp_verified",
-      entity_type: "profile",
-      entity_id: verification.userId,
-      ip_address: ipAddress,
-      metadata: { role, redirectUrl },
-    });
+    try {
+      await supabaseAdmin.from("audit_logs").insert({
+        user_id: verification.userId,
+        action: "auth.login_otp_verified",
+        entity_type: "profile",
+        entity_id: verification.userId,
+        ip_address: ipAddress,
+        metadata: { role, redirectUrl },
+      });
+    } catch (auditErr) {
+      console.warn("[Audit Log Notice] Supabase connection error during audit insert:", auditErr);
+    }
 
     // Create response and set secure session cookies
     const response = NextResponse.json({
