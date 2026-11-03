@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin, isSupabaseConfigured } from "@/lib/supabase/admin";
-import { sendCareerApplicationNotification } from "@/lib/email/resend";
+import { sendCareerApplicationNotification } from "@/lib/email/brevo";
 
 export async function POST(req: NextRequest) {
   try {
@@ -22,18 +22,22 @@ export async function POST(req: NextRequest) {
     // 1. Record application in Supabase
     if (isSupabaseConfigured) {
       try {
-        const { data } = await supabaseAdmin.from("career_applications").insert({
-          id: applicationId,
-          full_name: trimmedName,
-          email: normalizedEmail,
-          phone: phone?.trim() || null,
-          job_title: positionTitle.trim(),
-          experience_years: experienceYears || null,
-          resume_url: resumeUrl || null,
-          cover_notes: coverNotes || null,
-          status: "new",
-          created_at: new Date().toISOString(),
-        }).select().single();
+        const { data } = await supabaseAdmin
+          .from("career_applications")
+          .insert({
+            id: applicationId,
+            full_name: trimmedName,
+            email: normalizedEmail,
+            phone: phone?.trim() || null,
+            job_title: positionTitle.trim(),
+            experience_years: experienceYears || null,
+            resume_url: resumeUrl || null,
+            cover_notes: coverNotes || null,
+            status: "new",
+            created_at: new Date().toISOString(),
+          })
+          .select()
+          .single();
 
         if (data?.id) applicationId = data.id;
       } catch (dbErr) {
@@ -41,8 +45,8 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // 2. Dispatch HR alert via Resend
-    await sendCareerApplicationNotification({
+    // 2. Dispatch HR alert via Brevo
+    const emailResult = await sendCareerApplicationNotification({
       fullName: trimmedName,
       email: normalizedEmail,
       phone: phone?.trim(),
@@ -55,6 +59,7 @@ export async function POST(req: NextRequest) {
       success: true,
       message: "Application submitted successfully. Our engineering recruitment team will review your qualifications.",
       applicationId,
+      emailSent: emailResult.success,
     });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Error submitting application";

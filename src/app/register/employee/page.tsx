@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, Briefcase, RefreshCw, AlertCircle, ArrowLeft } from "lucide-react";
 import { motion } from "framer-motion";
+import { RegisterOtpModal } from "@/components/auth/RegisterOtpModal";
 
 export default function EmployeeRegistrationPage() {
   const router = useRouter();
@@ -19,6 +20,8 @@ export default function EmployeeRegistrationPage() {
 
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [otpModalOpen, setOtpModalOpen] = useState(false);
+  const [modalError, setModalError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,10 +45,12 @@ export default function EmployeeRegistrationPage() {
     setLoading(true);
 
     try {
+      // Step 1: Request Registration OTP via Brevo
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          action: "request_otp",
           type: "employee",
           fullName,
           email,
@@ -63,9 +68,76 @@ export default function EmployeeRegistrationPage() {
         return;
       }
 
-      router.push("/register/submitted");
+      // Open OTP Verification Modal
+      setOtpModalOpen(true);
+      setModalError(null);
     } catch {
       setErrorMessage("Unable to connect to server. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyOtp = async (otp: string) => {
+    setLoading(true);
+    setModalError(null);
+
+    try {
+      const res = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "employee",
+          fullName,
+          email,
+          department,
+          designation,
+          password,
+          otp,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setModalError(data.error || "Verification failed. Please check the code.");
+        setLoading(false);
+        return;
+      }
+
+      setOtpModalOpen(false);
+      router.push("/register/submitted");
+    } catch {
+      setModalError("Network error during verification. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResendOtp = async () => {
+    setLoading(true);
+    setModalError(null);
+    try {
+      const res = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "request_otp",
+          type: "employee",
+          fullName,
+          email,
+          department,
+          designation,
+          password,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setModalError(data.error || "Failed to resend code.");
+      }
+    } catch {
+      setModalError("Failed to resend code. Please try again.");
+    } finally {
       setLoading(false);
     }
   };
@@ -255,6 +327,16 @@ export default function EmployeeRegistrationPage() {
           </div>
         </div>
       </div>
+
+      <RegisterOtpModal
+        isOpen={otpModalOpen}
+        email={email}
+        onClose={() => setOtpModalOpen(false)}
+        onVerify={handleVerifyOtp}
+        onResendOtp={handleResendOtp}
+        loading={loading}
+        errorMessage={modalError}
+      />
     </div>
   );
 }

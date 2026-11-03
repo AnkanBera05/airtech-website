@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Lock, Mail, KeyRound, ArrowRight, ShieldCheck, AlertCircle, RefreshCw, CheckCircle2 } from "lucide-react";
 
@@ -222,9 +223,9 @@ export function IntegratedLoginPanel({ onSuccess, className = "" }: IntegratedLo
               <label className="block text-xs font-semibold text-airtech-charcoal uppercase tracking-wider">
                 Account Password
               </label>
-              <a href="#reset" className="text-[11px] text-airtech-blue hover:underline">
+              <Link href="/forgot-password" className="text-[11px] text-airtech-blue hover:underline">
                 Forgot password?
-              </a>
+              </Link>
             </div>
             <div className="relative">
               <input

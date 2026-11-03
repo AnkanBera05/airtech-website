@@ -239,9 +239,9 @@ export default function OwnerLoginPage() {
                     <span>Remember me</span>
                   </label>
 
-                  <a href="#forgot" className="text-airtech-blue hover:underline">
+                  <Link href="/forgot-password" className="text-airtech-blue hover:underline">
                     Forgot password?
-                  </a>
+                  </Link>
                 </div>
 
                 <button

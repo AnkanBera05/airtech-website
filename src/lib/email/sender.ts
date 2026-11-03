@@ -1,11 +1,20 @@
 // ==============================================================================
-// AIRTECH MEP ENGINEERING CONSULTANCY — TRANSACTIONAL EMAIL SERVICE
+// AIRTECH MEP ENGINEERING CONSULTANCY — CENTRAL EMAIL SENDER ADAPTER
+// Backwards-compatible facade routing to Brevo Transactional Email Service
 // ==============================================================================
 
-interface SendEmailParams {
+import {
+  sendBrevoEmail,
+  airtechEmailWrapper,
+  SendBrevoEmailParams,
+  BrevoResult,
+} from "./brevo";
+
+export interface SendEmailParams {
   to: string;
   subject: string;
   htmlContent: string;
+  textContent?: string;
 }
 
 export interface SendEmailResult {
@@ -15,110 +24,55 @@ export interface SendEmailResult {
 }
 
 /**
- * Sends a transactional email using the configured provider (Resend / SMTP).
- * Respects strict security rules:
- * - If not configured, safely reports that email delivery is not configured.
- * - NEVER simulates successful delivery or prints sensitive OTPs to public logs.
+ * Sends a transactional email using the official Brevo Transactional Email API.
  */
 export async function sendTransactionalEmail({
   to,
   subject,
   htmlContent,
+  textContent,
 }: SendEmailParams): Promise<SendEmailResult> {
-  const apiKey = process.env.EMAIL_PROVIDER_API_KEY;
-  const fromAddress = process.env.EMAIL_FROM_ADDRESS || "AIRTECH Engineering <notifications@airtech-mep.com>";
+  const result: BrevoResult = await sendBrevoEmail({
+    to,
+    subject,
+    htmlContent,
+    textContent,
+  });
 
-  if (!apiKey || apiKey.startsWith("re_123456789")) {
-    return {
-      success: false,
-      error: "Transactional email provider (EMAIL_PROVIDER_API_KEY) is not configured in the environment. Please configure your email service.",
-    };
-  }
-
-  try {
-    // Send via Resend REST API
-    const response = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        from: fromAddress,
-        to: [to],
-        subject,
-        html: htmlContent,
-      }),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      return {
-        success: false,
-        error: `Email provider rejected message: ${errorData.message || response.statusText}`,
-      };
-    }
-
-    const data = await response.json();
-    return {
-      success: true,
-      messageId: data.id,
-    };
-  } catch (err: unknown) {
-    const errorMsg = err instanceof Error ? err.message : "Network error during email dispatch";
-    return {
-      success: false,
-      error: errorMsg,
-    };
-  }
+  return {
+    success: result.success,
+    messageId: result.messageId,
+    error: result.error,
+  };
 }
 
 /**
  * Builds standard AIRTECH branded HTML template for 6-digit OTP delivery
  */
 export function buildOtpEmailHtml(otpCode: string, expiryMinutes: number = 5): string {
-  return `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #F8F9FA; margin: 0; padding: 24px; color: #101828; }
-    .card { max-width: 540px; margin: 0 auto; background: #ffffff; border: 1px solid #E4E7EC; border-radius: 8px; padding: 36px 32px; }
-    .header { border-bottom: 2px solid #0B192C; padding-bottom: 16px; margin-bottom: 24px; }
-    .title { font-size: 20px; font-weight: 700; color: #0B192C; letter-spacing: -0.02em; }
-    .subtitle { font-size: 13px; color: #667085; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 4px; }
-    .otp-box { background: #F4F8FC; border: 1px solid #D3E4F4; border-radius: 6px; text-align: center; padding: 20px; margin: 24px 0; }
-    .otp-code { font-family: 'Courier New', Courier, monospace; font-size: 32px; font-weight: 700; letter-spacing: 0.25em; color: #0B192C; }
-    .notice { font-size: 13px; color: #475467; line-height: 1.6; margin-top: 16px; }
-    .footer { margin-top: 32px; border-top: 1px solid #F2F4F7; padding-top: 16px; font-size: 12px; color: #98A2B3; text-align: center; }
-  </style>
-</head>
-<body>
-  <div class="card">
-    <div class="header">
-      <div class="title">AIRTECH</div>
-      <div class="subtitle">HVAC & MEP Engineering Consultancy • Kolkata</div>
-    </div>
-    <p>Dear Colleague / Client,</p>
-    <p class="notice">A sign-in request was initiated for your AIRTECH Engineering Portal account. Use the one-time security code below to complete your authentication:</p>
+  const content = `
+    <h1 style="color: #07172C; font-size: 20px; font-weight: 700; margin: 0 0 16px 0;">Sign-In Security Code</h1>
+    <p style="color: #334155; font-size: 14px; line-height: 1.6;">A sign-in request was initiated for your AIRTECH Engineering Portal account. Use the one-time security code below to complete your authentication:</p>
     
-    <div class="otp-box">
-      <div class="otp-code">${otpCode}</div>
+    <div style="background-color: #F8FAFC; border: 1px solid #BAE6FD; border-radius: 8px; padding: 24px; margin: 24px 0; text-align: center;">
+      <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #0284C7; margin-bottom: 6px;">One-Time Passcode</div>
+      <div style="font-family: 'SFMono-Regular', Consolas, 'Courier New', Courier, monospace; font-size: 36px; font-weight: 800; letter-spacing: 0.3em; color: #07172C; text-indent: 0.3em;">${otpCode}</div>
+      <div style="display: inline-block; background: #E0F2FE; color: #0369A1; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; padding: 4px 12px; border-radius: 9999px; margin-top: 8px;">Valid for ${expiryMinutes} Minutes</div>
     </div>
 
-    <p class="notice">
-      • This code is valid for <strong>${expiryMinutes} minutes</strong> only.<br>
-      • It can be used exactly once and will expire automatically.<br>
-      • Never share this verification code with anyone. AIRTECH engineering staff will never ask for your OTP.
-    </p>
-
-    <div class="footer">
-      AIRTECH MEP Engineering Consultancy • Rajarhat Gopalpur, Kolkata - 700136, India<br>
-      This is an automated system security notification.
+    <div style="background: #FFFBEB; border: 1px solid #FDE68A; border-radius: 6px; padding: 12px 16px; font-size: 12px; color: #92400E; margin: 20px 0;">
+      <strong>Security Notice:</strong>
+      <ul style="margin: 6px 0 0 0; padding-left: 20px;">
+        <li>This code is valid for <strong>${expiryMinutes} minutes</strong> only.</li>
+        <li>It can be used exactly once and will expire automatically.</li>
+        <li>Never share this code with anyone. AIRTECH engineering staff will never ask for your verification code.</li>
+      </ul>
     </div>
-  </div>
-</body>
-</html>
-  `.trim();
+  `;
+
+  return airtechEmailWrapper({
+    title: "AIRTECH Security Code",
+    preheader: `Your verification code is ${otpCode}. Valid for ${expiryMinutes} minutes.`,
+    contentHtml: content,
+  });
 }

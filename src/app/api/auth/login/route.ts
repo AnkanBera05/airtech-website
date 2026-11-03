@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { createOtpChallenge } from "@/lib/auth/otp";
-import { sendEmail, DEFAULT_FROM_EMAIL } from "@/lib/email/resend";
-import { buildOtpEmailHtml } from "@/lib/email/sender";
+import { sendLoginOtpEmail, isBrevoConfigured } from "@/lib/email/brevo";
 import { supabaseAdmin, isSupabaseConfigured } from "@/lib/supabase/admin";
 import { OWNER_EMAIL, ensureOwnerAccountProvisioned, getOwnerPasswordChangeStatus } from "@/lib/auth/owner";
 
@@ -91,7 +90,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // 3. Generate cryptographically secure 6-digit OTP challenge
+    // 3. Generate cryptographically secure 6-digit OTP challenge (5-min expiry, cooldown enforced)
     const activeUserId = userId || crypto.randomUUID();
     const ipAddress = req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip") || "127.0.0.1";
     const userAgent = req.headers.get("user-agent") || "";
@@ -104,11 +103,12 @@ export async function POST(req: NextRequest) {
       userAgent
     );
 
-    // 4. Dispatch OTP via Resend Transactional Email
-    const emailResult = await sendEmail({
-      to: normalizedEmail,
-      subject: "AIRTECH Security: Your 6-Digit Sign-In Code",
-      html: buildOtpEmailHtml(otp, 5),
+    // 4. Dispatch OTP via Brevo Transactional Email
+    const emailResult = await sendLoginOtpEmail({
+      email: normalizedEmail,
+      otp,
+      expiryMinutes: 5,
+      ipAddress,
     });
 
     return NextResponse.json({
@@ -117,13 +117,25 @@ export async function POST(req: NextRequest) {
       email: normalizedEmail,
       challengeId,
       isOwner,
+      userRole,
       mustChangePassword: isOwner ? getOwnerPasswordChangeStatus() : false,
       emailConfigured: emailResult.success,
       message: `A 6-digit security code has been sent to ${normalizedEmail}.`,
-      warning: emailResult.success ? undefined : "Transactional email service pending API key configuration.",
+      warning: emailResult.success
+        ? undefined
+        : emailResult.error || "Brevo email service pending API key configuration.",
     });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Authentication error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    // Check if cooldown or rate limit error
+    const isClientError =
+      message.includes("Please wait") ||
+      message.includes("Rate limit") ||
+      message.includes("cooldown");
+
+    return NextResponse.json(
+      { error: message },
+      { status: isClientError ? 429 : 500 }
+    );
   }
 }

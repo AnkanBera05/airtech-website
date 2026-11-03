@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin, isSupabaseConfigured } from "@/lib/supabase/admin";
-import { sendContactEnquiryNotification } from "@/lib/email/resend";
+import { sendContactEnquiryNotification } from "@/lib/email/brevo";
 
 export async function POST(req: NextRequest) {
   try {
@@ -22,16 +22,20 @@ export async function POST(req: NextRequest) {
     let inquiryId = crypto.randomUUID();
     if (isSupabaseConfigured) {
       try {
-        const { data, error } = await supabaseAdmin.from("contact_enquiries").insert({
-          id: inquiryId,
-          full_name: trimmedName,
-          email: normalizedEmail,
-          phone: phone?.trim() || null,
-          organization_name: organizationName?.trim() || null,
-          message: trimmedMessage,
-          status: "unread",
-          created_at: new Date().toISOString(),
-        }).select().single();
+        const { data } = await supabaseAdmin
+          .from("contact_enquiries")
+          .insert({
+            id: inquiryId,
+            full_name: trimmedName,
+            email: normalizedEmail,
+            phone: phone?.trim() || null,
+            organization_name: organizationName?.trim() || null,
+            message: trimmedMessage,
+            status: "unread",
+            created_at: new Date().toISOString(),
+          })
+          .select()
+          .single();
 
         if (data?.id) {
           inquiryId = data.id;
@@ -41,8 +45,8 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // 2. Trigger Transactional Notification via Resend
-    await sendContactEnquiryNotification({
+    // 2. Trigger Transactional Notification via Brevo
+    const emailResult = await sendContactEnquiryNotification({
       fullName: trimmedName,
       email: normalizedEmail,
       phone: phone?.trim(),
@@ -54,6 +58,7 @@ export async function POST(req: NextRequest) {
       success: true,
       message: "Your inquiry has been submitted directly to our engineering team.",
       inquiryId,
+      emailSent: emailResult.success,
     });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Error submitting inquiry";
