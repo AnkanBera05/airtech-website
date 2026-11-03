@@ -4,6 +4,7 @@
 
 import Stripe from "stripe";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { sendAdminSecurityAlert } from "@/lib/email/brevo";
 
 if (typeof window !== "undefined") {
   throw new Error("SECURITY ALERT: Stripe server SDK must never be loaded client-side.");
@@ -216,6 +217,13 @@ export async function handleStripeWebhookEvent(rawBody: string, signature: strin
         type: "invoice",
         action_url: `/portal/finance/invoices/${invoiceId}`,
       });
+
+      // Send Brevo email alert to admin/finance
+      await sendAdminSecurityAlert({
+        eventTitle: `Payment Received: ${invoice.invoice_number}`,
+        details: `Stripe online card checkout of ${invoice.currency?.toUpperCase()} ${paidAmount.toLocaleString("en-IN")} received for invoice ${invoice.invoice_number}.`,
+        metadata: { invoiceId, invoiceNumber: invoice.invoice_number, amount: paidAmount, currency: invoice.currency },
+      }).catch((e) => console.warn("[Brevo Payment Alert Notice]", e));
 
       break;
     }

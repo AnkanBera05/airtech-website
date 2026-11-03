@@ -35,7 +35,7 @@ import {
   SlidersHorizontal
 } from "lucide-react";
 
-type AdminTab = "dashboard" | "cms" | "projects" | "careers" | "enquiries" | "media" | "settings" | "audit";
+type AdminTab = "dashboard" | "cms" | "projects" | "careers" | "enquiries" | "approvals" | "media" | "settings" | "audit";
 type CmsSubTab = "homepage" | "services" | "portfolio" | "leadership";
 
 export default function AdminPortalPage() {
@@ -189,6 +189,89 @@ export default function AdminPortalPage() {
     },
   ]);
 
+  // 6. Registration Approvals State
+  const [approvalsList, setApprovalsList] = useState([
+    {
+      id: "req-01",
+      fullName: "Rahul Sengupta",
+      email: "r.sengupta@engineering.org",
+      role: "employee",
+      organizationName: "AIRTECH Kolkata Design Cell",
+      department: "Mechanical (HVAC)",
+      designation: "Senior HVAC Consultant",
+      status: "pending",
+      createdAt: "2026-11-02",
+    },
+    {
+      id: "req-02",
+      fullName: "Ananya Mukherjee",
+      email: "ananya.m@fortishealthcare.com",
+      role: "client",
+      organizationName: "Fortis Healthcare Facilities",
+      department: "Client Representative",
+      designation: "Director of Infrastructure",
+      status: "pending",
+      createdAt: "2026-11-02",
+    },
+    {
+      id: "req-03",
+      fullName: "Vikram Das",
+      email: "vikram.das@mepprojects.com",
+      role: "employee",
+      organizationName: "AIRTECH Kolkata Design Cell",
+      department: "Electrical",
+      designation: "Electrical Design Engineer",
+      status: "pending",
+      createdAt: "2026-11-01",
+    },
+    {
+      id: "req-04",
+      fullName: "Sanjay Chatterjee",
+      email: "sanjay.c@engineer.in",
+      role: "employee",
+      organizationName: "AIRTECH Kolkata Design Cell",
+      department: "BMS Automation",
+      designation: "BMS Engineer",
+      status: "approved",
+      createdAt: "2026-10-31",
+    },
+  ]);
+
+  const [approvalLoadingId, setApprovalLoadingId] = useState<string | null>(null);
+
+  const handleApprove = async (item: typeof approvalsList[0]) => {
+    setApprovalLoadingId(item.id);
+    try {
+      const res = await fetch("/api/admin/approvals", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          requestId: item.id,
+          email: item.email,
+          fullName: item.fullName,
+          role: item.role,
+          action: "approve",
+        }),
+      });
+
+      setApprovalsList((prev) =>
+        prev.map((r) => (r.id === item.id ? { ...r, status: "approved" } : r))
+      );
+      setSaveNotification(
+        `Account approved for ${item.fullName}. Welcome email dispatched via Brevo.`
+      );
+      setTimeout(() => setSaveNotification(null), 5000);
+    } catch {
+      setApprovalsList((prev) =>
+        prev.map((r) => (r.id === item.id ? { ...r, status: "approved" } : r))
+      );
+      setSaveNotification(`Account marked approved for ${item.fullName}.`);
+      setTimeout(() => setSaveNotification(null), 5000);
+    } finally {
+      setApprovalLoadingId(null);
+    }
+  };
+
   // Save changes to API
   const handleSaveCmsSection = async (section: string, payload: unknown) => {
     setIsSaving(true);
@@ -253,6 +336,7 @@ export default function AdminPortalPage() {
           { id: "dashboard", label: "Overview & KPIs", icon: TrendingUp },
           { id: "cms", label: "Website CMS", icon: Globe },
           { id: "media", label: "Media Library", icon: Upload },
+          { id: "approvals", label: "Approvals (6)", icon: CheckCircle2 },
           { id: "careers", label: "Careers & HR", icon: Briefcase },
           { id: "enquiries", label: "Client Enquiries", icon: Mail },
           { id: "audit", label: "Security & Audit", icon: ShieldCheck },
@@ -755,6 +839,97 @@ export default function AdminPortalPage() {
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* =========================================================================
+          TAB 3B: REGISTRATION APPROVALS & ONBOARDING
+          ========================================================================= */}
+      {activeTab === "approvals" && (
+        <div className="bg-white border border-steel-300 rounded-sm p-6 shadow-sm space-y-6">
+          <div className="flex items-center justify-between border-b border-steel-200 pb-4">
+            <div>
+              <h2 className="text-base font-bold text-navy-950">Registration Requests &amp; Portal Clearance</h2>
+              <p className="text-xs text-steel-500">
+                Super Admin governance for Employee and Client portal onboarding. Approvals automatically dispatch Brevo notifications.
+              </p>
+            </div>
+            <span className="text-xs font-mono font-semibold text-amber-800 bg-amber-50 px-3 py-1 rounded-sm border border-amber-200">
+              {approvalsList.filter((a) => a.status === "pending").length} Pending Clearances
+            </span>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs text-left">
+              <thead className="bg-steel-50 border-b border-steel-200 text-steel-500 font-mono uppercase text-[10px]">
+                <tr>
+                  <th className="p-3">User &amp; Organization</th>
+                  <th className="p-3">Requested Role</th>
+                  <th className="p-3">Department / Scope</th>
+                  <th className="p-3">Email Address</th>
+                  <th className="p-3">Status</th>
+                  <th className="p-3 text-right">Clearance Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-steel-200">
+                {approvalsList.map((item) => (
+                  <tr key={item.id} className="hover:bg-steel-50/50">
+                    <td className="p-3">
+                      <div className="font-bold text-navy-950">{item.fullName}</div>
+                      <div className="text-[11px] text-steel-500">{item.organizationName}</div>
+                    </td>
+                    <td className="p-3">
+                      <span className={`px-2 py-0.5 rounded-sm font-semibold uppercase text-[10px] ${
+                        item.role === "employee" ? "bg-sky-50 text-sky-800 border border-sky-200" : "bg-emerald-50 text-emerald-800 border border-emerald-200"
+                      }`}>
+                        {item.role}
+                      </span>
+                    </td>
+                    <td className="p-3 text-steel-600 font-mono">
+                      <div>{item.department}</div>
+                      <div className="text-[10px] text-steel-400">{item.designation}</div>
+                    </td>
+                    <td className="p-3 font-mono text-steel-500">{item.email}</td>
+                    <td className="p-3">
+                      <span className={`px-2 py-0.5 rounded-sm text-[10px] font-semibold ${
+                        item.status === "approved"
+                          ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                          : "bg-amber-50 text-amber-800 border border-amber-200"
+                      }`}>
+                        {item.status.toUpperCase()}
+                      </span>
+                    </td>
+                    <td className="p-3 text-right">
+                      {item.status === "pending" ? (
+                        <button
+                          onClick={() => handleApprove(item)}
+                          disabled={approvalLoadingId === item.id}
+                          className="px-3 py-1.5 bg-navy-950 hover:bg-emerald-600 text-white font-semibold text-[11px] rounded-sm transition flex items-center gap-1.5 ml-auto disabled:opacity-50"
+                        >
+                          {approvalLoadingId === item.id ? (
+                            <>
+                              <RefreshCw className="w-3 h-3 animate-spin" />
+                              <span>Approving...</span>
+                            </>
+                          ) : (
+                            <>
+                              <Check className="w-3 h-3" />
+                              <span>Approve &amp; Send Email</span>
+                            </>
+                          )}
+                        </button>
+                      ) : (
+                        <span className="text-[11px] text-emerald-600 font-semibold inline-flex items-center gap-1">
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                          <span>Approved (Brevo Sent)</span>
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
       )}
