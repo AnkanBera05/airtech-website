@@ -1,7 +1,14 @@
 {
   "name": "airtech-website",
   "version": "1.0.0",
+  "description": "AIRTECH — HVAC & MEP Engineering Consultancy Corporate Platform, Admin CMS & 3 Specialized Portals",
   "private": true,
+  "author": "Ankan Bera (https://github.com/AnkanBera05)",
+  "homepage": "https://airtech-website-gules.vercel.app",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/AnkanBera05/airtech-website.git"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
